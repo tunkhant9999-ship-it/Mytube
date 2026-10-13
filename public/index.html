@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MyTube</title>
+<link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:'Poppins','Padauk',sans-serif; }
+:root {
+  --primary:#ff0055; --secondary:#7b2ff7; --accent:#00d4ff;
+  --bg:#0a0a15; --card:rgba(255,255,255,0.05); --border:rgba(255,255,255,0.1);
+  --text:#fff; --dim:#9999aa; --nav-h:70px;
+}
+body { background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255,0,85,0.18), transparent 45%),
+    radial-gradient(circle at 90% 5%, rgba(123,47,247,0.18), transparent 45%),
+    radial-gradient(circle at 50% 100%, rgba(0,212,255,0.12), transparent 50%);
+}
+
+/* LOGIN */
+#loginScreen { position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center; padding:20px; background:var(--bg); overflow-y:auto; }
+#loginScreen.hidden { display:none; }
+#loginScreen::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,0,85,0.25), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(123,47,247,0.25), transparent 50%);
+}
+.login-box {
+  width:100%; max-width:430px;
+  background:rgba(20,20,35,0.75); backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,0.12); border-radius:24px;
+  padding:32px 26px; box-shadow:0 30px 80px rgba(0,0,0,0.6);
+  animation:boxIn 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes boxIn { from{opacity:0;transform:translateY(30px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
+.login-logo {
+  width:72px; height:72px; margin:0 auto 18px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  border-radius:22px; display:flex; align-items:center; justify-content:center;
+  font-size:36px; box-shadow:0 15px 40px rgba(255,0,85,0.45);
+  animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+.login-box h1 {
+  text-align:center; font-size:24px; margin-bottom:6px;
+  background:linear-gradient(135deg,#fff,#ff7eb3);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.login-box .sub { text-align:center; color:var(--dim); font-size:13px; margin-bottom:22px; line-height:1.5; }
+
+.tabs { display:flex; gap:8px; margin-bottom:20px; background:rgba(255,255,255,0.05); padding:5px; border-radius:12px; }
+.tab { flex:1; padding:10px; border:none; background:none; color:var(--dim); font-size:13px; font-weight:600; border-radius:9px; cursor:pointer; transition:0.25s; font-family:inherit; }
+.tab.active { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; box-shadow:0 4px 14px rgba(255,0,85,0.4); }
+
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:12px; color:var(--dim); margin-bottom:6px; padding-left:4px; }
+.field input, .field select {
+  width:100%; padding:13px 16px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px; color:#fff; font-size:14px; outline:none; transition:0.25s;
+  font-family:inherit;
+}
+.field input:focus, .field select:focus { border-color:rgba(255,0,85,0.6); box-shadow:0 0 0 4px rgba(255,0,85,0.12); }
+.field select option { background:#1a1a2e; }
+.field input::placeholder { color:#666; }
+.field-err { color:#ff5577; font-size:11px; margin-top:5px; padding-left:4px; display:none; }
+.field.error input, .field.error select { border-color:#ff5577; }
+.field.error .field-err { display:block; }
+
+.login-btn {
+  width:100%; padding:15px; margin-top:8px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff; border:none; border-radius:14px; font-size:15px; font-weight:600;
+  cursor:pointer; box-shadow:0 10px 30px rgba(255,0,85,0.4);
+  transition:0.25s; font-family:inherit;
+}
+.login-btn:active { transform:scale(0.97); }
+.login-btn:disabled { opacity:0.6; }
+
+/* APP */
+#app { display:none; padding-bottom:calc(var(--nav-h) + 20px); min-height:100vh; }
+#app.show { display:block; }
+
+.topbar {
+  position:sticky; top:0; z-index:90; padding:14px 18px;
+  background:rgba(10,10,21,0.75); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+}
+.brand { display:flex; align-items:center; gap:9px; font-size:18px; font-weight:700; }
+.brand-icon {
+  width:34px; height:34px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:17px; box-shadow:0 6px 16px rgba(255,0,85,0.4);
+}
+.brand-text {
+  background:linear-gradient(135deg,#fff,#ff7eb3);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.spacer { flex:1; }
+.avatar-mini {
+  width:38px; height:38px; border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:16px; cursor:pointer;
+  border:2px solid rgba(255,255,255,0.15);
+}
+
+.view { display:none; padding:18px; }
+.view.active { display:block; animation:viewIn 0.35s ease; }
+@keyframes viewIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+
+.view-title {
+  font-size:20px; font-weight:700; margin-bottom:16px;
+  display:flex; align-items:center; gap:10px;
+}
+.view-title::before {
+  content:''; width:4px; height:22px;
+  background:linear-gradient(180deg,var(--primary),var(--secondary));
+  border-radius:2px;
+}
+.view-title.small { font-size:16px; }
+
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.stat {
+  background:var(--card); backdrop-filter:blur(10px);
+  border:1px solid var(--border); border-radius:14px;
+  padding:14px 10px; text-align:center;
+}
+.stat .num {
+  font-size:18px; font-weight:700; margin-bottom:2px;
+  background:linear-gradient(135deg,#fff,#ff7eb3);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.stat .lbl { font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px; }
+
+.search-box { position:relative; margin-bottom:16px; }
+.search-box input {
+  width:100%; padding:13px 16px 13px 42px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  border-radius:14px; color:#fff; font-size:14px; outline:none;
+  font-family:inherit;
+}
+.search-box input:focus { border-color:rgba(255,0,85,0.5); }
+.search-box input::placeholder { color:#666; }
+.search-box .ico { position:absolute; left:15px; top:50%; transform:translateY(-50%); opacity:0.55; font-size:15px; }
+
+.search-btn {
+  width:100%; padding:13px; margin-top:4px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff; border:none; border-radius:14px;
+  font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+  box-shadow:0 8px 24px rgba(255,0,85,0.35);
+}
+.search-btn:active { transform:scale(0.98); }
+
+.user-card {
+  background:linear-gradient(135deg,rgba(255,0,85,0.12),rgba(123,47,247,0.12));
+  border:1px solid var(--border); border-radius:16px;
+  padding:18px; margin-bottom:16px; display:flex; align-items:center; gap:14px;
+}
+.user-card .av {
+  width:56px; height:56px; border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:700; flex-shrink:0;
+}
+.user-card .info h3 { font-size:16px; margin-bottom:3px; }
+.user-card .info p { font-size:12px; color:var(--dim); }
+
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+@media (min-width:700px) { .grid { grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; } }
+
+.vcard {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden; cursor:pointer;
+  transition:0.3s; position:relative;
+  animation:cardIn 0.4s ease backwards;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(15px);} to{opacity:1;transform:translateY(0);} }
+.vcard:active { transform:scale(0.97); }
+
+.vthumb { width:100%; aspect-ratio:16/9; background:#000; position:relative; overflow:hidden; }
+.vthumb video { width:100%; height:100%; object-fit:cover; pointer-events:none; }
+.vthumb .ov { position:absolute; inset:0; background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.6)); }
+.vthumb .play-ov {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:44px; height:44px; background:rgba(255,255,255,0.92); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);
+}
+.vthumb .play-ov::before {
+  content:''; border-style:solid; border-width:8px 0 8px 12px;
+  border-color:transparent transparent transparent #0a0a15; margin-left:3px;
+}
+.vthumb .dur {
+  position:absolute; bottom:6px; right:6px;
+  background:rgba(0,0,0,0.85); color:#fff; font-size:10px; font-weight:600;
+  padding:3px 6px; border-radius:5px;
+}
+.vdel {
+  position:absolute; top:6px; right:6px;
+  width:30px; height:30px; background:rgba(0,0,0,0.7);
+  color:#fff; border:none; border-radius:50%; font-size:13px;
+  cursor:pointer; z-index:3; display:flex; align-items:center; justify-content:center;
+}
+.vdel:active { background:var(--primary); }
+
+.vinfo { padding:10px; }
+.vinfo h4 {
+  font-size:13px; font-weight:500; line-height:1.35; margin-bottom:5px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden; word-break:break-word;
+}
+.vinfo .meta { display:flex; gap:8px; font-size:10px; color:var(--dim); flex-wrap:wrap; }
+
+.empty { text-align:center; padding:60px 20px; display:none; }
+.empty.show { display:block; }
+.empty .ico {
+  width:100px; height:100px; margin:0 auto 16px;
+  background:linear-gradient(135deg,rgba(255,0,85,0.15),rgba(123,47,247,0.15));
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:48px; border:2px dashed rgba(255,0,85,0.3);
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+.empty h3 {
+  font-size:18px; margin-bottom:8px;
+  background:linear-gradient(135deg,#fff,#ff7eb3);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.empty p { color:var(--dim); font-size:13px; line-height:1.6; max-width:320px; margin:0 auto; }
+
+.profile-head {
+  text-align:center; padding:30px 20px 20px;
+  background:linear-gradient(135deg,rgba(255,0,85,0.15),rgba(123,47,247,0.15));
+  border:1px solid var(--border); border-radius:20px;
+  margin-bottom:18px; position:relative; overflow:hidden;
+}
+.profile-head::before {
+  content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+  background:radial-gradient(circle at 30% 30%,rgba(255,0,85,0.2),transparent 40%);
+  animation:rotate 15s linear infinite;
+}
+@keyframes rotate { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+.avatar-big {
+  width:90px; height:90px; margin:0 auto 14px; border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex; align-items:center; justify-content:center;
+  font-size:38px; font-weight:700; color:#fff;
+  box-shadow:0 15px 40px rgba(255,0,85,0.5);
+  border:3px solid rgba(255,255,255,0.2);
+  position:relative; z-index:1;
+}
+.profile-head h2 { font-size:22px; margin-bottom:4px; position:relative; z-index:1; }
+.profile-head .tag { color:var(--dim); font-size:13px; position:relative; z-index:1; }
+.profile-head .region-badge {
+  display:inline-block; margin-top:10px; padding:5px 14px;
+  background:rgba(255,255,255,0.1); border:1px solid var(--border);
+  border-radius:20px; font-size:12px; position:relative; z-index:1;
+}
+
+.info-list {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; overflow:hidden; margin-bottom:16px;
+}
+.info-row { display:flex; align-items:center; gap:14px; padding:15px 18px; border-bottom:1px solid var(--border); }
+.info-row:last-child { border-bottom:none; }
+.info-row .ico { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.info-row .ico.pink { background:linear-gradient(135deg,#ff0055,#ff7eb3); }
+.info-row .ico.purple { background:linear-gradient(135deg,#7b2ff7,#b388ff); }
+.info-row .ico.blue { background:linear-gradient(135deg,#00d4ff,#4facfe); }
+.info-row .ico.green { background:linear-gradient(135deg,#00e676,#69f0ae); }
+.info-row .txt { flex:1; min-width:0; }
+.info-row .txt .lbl { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+.info-row .txt .val { font-size:14px; font-weight:500; word-break:break-all; }
+
+.logout-btn {
+  width:100%; padding:15px;
+  background:rgba(255,0,85,0.15); border:1px solid rgba(255,0,85,0.4);
+  color:#ff5577; border-radius:14px; font-size:14px; font-weight:600;
+  cursor:pointer; font-family:inherit;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.logout-btn:active { background:var(--primary); color:#fff; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+  background:rgba(12,12,22,0.88); backdrop-filter:blur(24px) saturate(180%);
+  border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-around;
+  z-index:200; padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex:1; height:100%; background:none; border:none; color:var(--dim);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; cursor:pointer; font-family:inherit; transition:0.25s;
+  position:relative; padding:0;
+}
+.nav-btn .nav-ico { font-size:21px; transition:transform 0.25s; line-height:1; }
+.nav-btn .nav-lbl { font-size:10px; font-weight:500; }
+.nav-btn.active { color:#fff; }
+.nav-btn.active .nav-ico { transform:translateY(-2px) scale(1.1); filter:drop-shadow(0 4px 10px rgba(255,0,85,0.6)); }
+.nav-btn.active::after {
+  content:''; position:absolute; top:0; width:30px; height:3px;
+  background:linear-gradient(90deg,var(--primary),var(--secondary));
+  border-radius:0 0 3px 3px;
+}
+.nav-btn.center { flex:0 0 76px; }
+.nav-btn.center .plus-circle {
+  width:56px; height:56px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:30px; font-weight:300; color:#fff;
+  box-shadow:0 8px 24px rgba(255,0,85,0.55), 0 0 0 4px rgba(10,10,21,0.9);
+  transform:translateY(-14px); transition:0.25s; line-height:1; padding-bottom:3px;
+}
+.nav-btn.center:active .plus-circle { transform:translateY(-14px) scale(0.9); }
+.nav-btn.center .nav-lbl { margin-top:-8px; }
+
+/* PLAYER */
+.player-modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(5,5,15,0.97); backdrop-filter:blur(20px);
+  z-index:1000; padding:16px; overflow-y:auto;
+}
+.player-modal.show { display:block; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+.p-close {
+  position:fixed; top:16px; right:16px; width:44px; height:44px;
+  border-radius:50%; background:rgba(255,255,255,0.1); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:20px;
+  cursor:pointer; z-index:1001; display:flex; align-items:center; justify-content:center;
+}
+.p-close:active { background:var(--primary); transform:rotate(90deg); }
+.p-inner { max-width:1000px; margin:60px auto 20px; }
+.p-video-wrap { border-radius:16px; overflow:hidden; background:#000; box-shadow:0 25px 60px rgba(0,0,0,0.7); }
+.p-video-wrap video { width:100%; display:block; max-height:65vh; background:#000; }
+.p-info { padding:18px; background:var(--card); border:1px solid var(--border); border-radius:16px; margin-top:14px; }
+.p-info h2 { font-size:17px; margin-bottom:10px; line-height:1.4; word-break:break-word; }
+.p-info .p-meta { display:flex; gap:14px; color:var(--dim); font-size:12px; flex-wrap:wrap; }
+
+.toast {
+  position:fixed; top:80px; left:50%; transform:translateX(-50%) translateY(-30px);
+  background:rgba(20,20,35,0.96); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,0,85,0.5); color:#fff;
+  padding:13px 20px; border-radius:14px; font-size:13px;
+  z-index:1100; opacity:0; transition:0.4s; max-width:90vw;
+  pointer-events:none; text-align:center; line-height:1.5;
+  box-shadow:0 20px 50px rgba(0,0,0,0.5);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.ok { border-color:rgba(0,230,118,0.6); }
+.toast.err { border-color:rgba(255,0,85,0.6); }
+
+.progress {
+  position:fixed; bottom:calc(var(--nav-h) + 16px); left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:rgba(20,20,35,0.96); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,0,85,0.4);
+  padding:13px 20px; border-radius:14px;
+  display:flex; align-items:center; gap:12px;
+  font-size:13px; z-index:999; transition:0.4s; max-width:90vw;
+  box-shadow:0 20px 50px rgba(0,0,0,0.5);
+}
+.progress.show { transform:translateX(-50%) translateY(0); }
+.spin {
+  width:20px; height:20px; border:3px solid rgba(255,0,85,0.2);
+  border-top-color:var(--primary); border-radius:50%;
+  animation:sp 0.8s linear infinite; flex-shrink:0;
+}
+@keyframes sp { to{transform:rotate(360deg);} }
+::-webkit-scrollbar { width:0; height:0; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">▶</div>
+    <h1>MyTube</h1>
+    <p class="sub">ဘယ်ဖုန်းကနေဝင်ဝင် သင့် video တွေ ရှိနေမယ်</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">🔑 Login</button>
+      <button class="tab" id="tabReg" onclick="switchTab('register')">✨ အကောင့်ဖွင့်</button>
+    </div>
+
+    <form id="authForm" autocomplete="off">
+      <div class="field" id="f-name" style="display:none">
+        <label>နာမည်</label>
+        <input type="text" id="in-name" placeholder="ဥပမာ - Aung Aung">
+        <div class="field-err">နာမည် ထည့်ပါ</div>
+      </div>
+
+      <div class="field" id="f-gmail">
+        <label>Gmail</label>
+        <input type="email" id="in-gmail" placeholder="example@gmail.com">
+        <div class="field-err">မှန်ကန်တဲ့ Gmail ထည့်ပါ</div>
+      </div>
+
+      <div class="field" id="f-pass">
+        <label>စကားဝှက်</label>
+        <input type="password" id="in-pass" placeholder="အနည်းဆုံး ၄ လုံး">
+        <div class="field-err">စကားဝှက် အနည်းဆုံး ၄ လုံး</div>
+      </div>
+
+      <div class="field" id="f-region" style="display:none">
+        <label>ဒေသ</label>
+        <select id="in-region">
+          <option value="">-- ရွေးပါ --</option>
+          <option>ရန်ကုန်</option><option>မန္တလေး</option>
+          <option>နေပြည်တော်</option><option>ပဲခူး</option>
+          <option>မော်လမြိုင်</option><option>စစ်ကိုင်း</option>
+          <option>မကွေး</option><option>တနင်္သာရီ</option>
+          <option>ရခိုင်</option><option>ရှမ်း</option>
+          <option>ကချင်</option><option>ကယား</option>
+          <option>ကရင်</option><option>ချင်း</option>
+          <option>မွန်</option><option>Other</option>
+        </select>
+        <div class="field-err">ဒေသ ရွေးပါ</div>
+      </div>
+
+      <button type="submit" class="login-btn" id="authBtn">🔑 ဝင်မည်</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">▶</div>
+      <div class="brand-text">MyTube</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="avatar-mini" id="topAvatar" onclick="switchView('profile')">U</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="view-title">မင်္ဂလာပါ 👋</div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="s-videos">0</div><div class="lbl">Videos</div></div>
+      <div class="stat"><div class="num" id="s-size">0</div><div class="lbl">Storage</div></div>
+      <div class="stat"><div class="num" id="s-views">0</div><div class="lbl">Views</div></div>
+    </div>
+
+    <div class="view-title small">🆕 နောက်ဆုံးတင်ထားသည်</div>
+    <div class="grid" id="homeGrid"></div>
+    <div class="empty" id="homeEmpty">
+      <div class="ico">📹</div>
+      <h3>Video မရှိသေးပါ</h3>
+      <p>အောက်ခြေအလယ်က ➕ ခလုတ်ကိုနှိပ်ပြီး Video စတင်တင်ပါ</p>
+    </div>
+  </div>
+
+  <!-- FIND USER -->
+  <div class="view" id="view-find">
+    <div class="view-title">🔍 အခြားသူ ရှာဖွေ</div>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:14px;line-height:1.6">
+      သူငယ်ချင်းရဲ့ Gmail ရိုက်ထည့်ပြီး သူတင်ထားတဲ့ Video တွေကို ကြည့်နိုင်တယ်
+    </p>
+    <div class="search-box">
+      <span class="ico">📧</span>
+      <input type="email" id="findInput" placeholder="user@gmail.com">
+    </div>
+    <button class="search-btn" onclick="findUser()">🔍 ရှာမည်</button>
+    <div id="findResult" style="margin-top:20px"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view" id="view-profile">
+    <div class="profile-head">
+      <div class="avatar-big" id="bigAvatar">U</div>
+      <h2 id="pName">User</h2>
+      <div class="tag" id="pGmail">user@gmail.com</div>
+      <div class="region-badge">📍 <span id="pRegion">Region</span></div>
+    </div>
+
+    <div class="info-list">
+      <div class="info-row">
+        <div class="ico pink">👤</div>
+        <div class="txt"><div class="lbl">နာမည်</div><div class="val" id="iName">-</div></div>
+      </div>
+      <div class="info-row">
+        <div class="ico purple">📧</div>
+        <div class="txt"><div class="lbl">Gmail</div><div class="val" id="iGmail">-</div></div>
+      </div>
+      <div class="info-row">
+        <div class="ico blue">📍</div>
+        <div class="txt"><div class="lbl">ဒေသ</div><div class="val" id="iRegion">-</div></div>
+      </div>
+      <div class="info-row">
+        <div class="ico green">💾</div>
+        <div class="txt"><div class="lbl">Video အရေအတွက်</div><div class="val" id="iVideos">0 videos</div></div>
+      </div>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">🚪 အကောင့်မှ ထွက်မည်</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-btn active" data-view="home" onclick="switchView('home')">
+    <span class="nav-ico">🏠</span><span class="nav-lbl">Home</span>
+  </button>
+  <button class="nav-btn" data-view="find" onclick="switchView('find')">
+    <span class="nav-ico">🔍</span><span class="nav-lbl">ရှာဖွေ</span>
+  </button>
+  <button class="nav-btn center" onclick="document.getElementById('fileInput').click()">
+    <div class="plus-circle">+</div>
+    <span class="nav-lbl">တင်</span>
+  </button>
+  <button class="nav-btn" data-view="profile" onclick="switchView('profile')">
+    <span class="nav-ico">👤</span><span class="nav-lbl">Profile</span>
+  </button>
+</div>
+
+<input type="file" id="fileInput" accept="video/*" multiple style="display:none">
+
+<!-- PLAYER -->
+<div class="player-modal" id="playerModal">
+  <button class="p-close" onclick="closePlayer()">✕</button>
+  <div class="p-inner">
+    <div class="p-video-wrap">
+      <video id="playerVideo" controls autoplay playsinline></video>
+    </div>
+    <div class="p-info">
+      <h2 id="playerTitle"></h2>
+      <div class="p-meta">
+        <span>👤 <span id="playerUser"></span></span>
+        <span>📅 <span id="playerDate"></span></span>
+        <span>💾 <span id="playerSize"></span></span>
+        <span>👁 <span id="playerViews">0</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="progress" id="progress">
+  <div class="spin"></div>
+  <div>
+    <div id="progText">တင်နေသည်...</div>
+    <div style="font-size:11px;color:#9999aa;margin-top:2px" id="progFile"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+============================================================ */
+// Server URL — local test အတွက် '' ထားပါ
+// Online host လုပ်ပြီးရင် 'https://your-server.com' ထည့်ပါ
+const API = '';
+
+const TOKEN_KEY = 'mytube_token';
+
+let token = localStorage.getItem(TOKEN_KEY) || null;
+let currentUser = null;
+let myVideos = [];
+let viewingOther = false;
+
+/* ============================================================
+   API HELPER
+============================================================ */
+async function api(path, opts = {}) {
+  const headers = opts.headers || {};
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (opts.body && !(opts.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  
+  if (res.status === 401) {
+    logout();
+    throw new Error('Session expired');
+  }
+  if (!res.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg, type = 'ok', dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ============================================================
+   LOGIN / REGISTER
+============================================================ */
+let authMode = 'login';
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabReg').classList.toggle('active', mode === 'register');
+  document.getElementById('f-name').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('f-region').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('authBtn').textContent = mode === 'login' ? '🔑 ဝင်မည်' : '✨ အကောင့်ဖွင့်မည်';
+}
+
+function setErr(id, show) {
+  document.getElementById(id).classList.toggle('error', show);
+}
+
+document.getElementById('authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('authBtn');
+  btn.disabled = true;
+  
+  const gmail = document.getElementById('in-gmail').value.trim();
+  const password = document.getElementById('in-pass').value;
+  
+  let ok = true;
+  const gmailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gmail);
+  setErr('f-gmail', !gmailOk);
+  if (!gmailOk) ok = false;
+  
+  const passOk = password.length >= 4;
+  setErr('f-pass', !passOk);
+  if (!passOk) ok = false;
+  
+  let payload = { gmail, password };
+  
+  if (authMode === 'register') {
+    const name = document.getElementById('in-name').value.trim();
+    const region = document.getElementById('in-region').value;
+    
+    const nameOk = name.length >= 2;
+    setErr('f-name', !nameOk);
+    if (!nameOk) ok = false;
+    
+    const regionOk = region.length > 0;
+    setErr('f-region', !regionOk);
+    if (!regionOk) ok = false;
+    
+    payload = { name, gmail, password, region };
+  }
+  
+  if (!ok) { btn.disabled = false; return; }
+  
+  try {
+    const path = authMode === 'login' ? '/api/login' : '/api/register';
+    const data = await api(path, { method: 'POST', body: JSON.stringify(payload) });
+    
+    token = data.token;
+    localStorage.setItem(TOKEN_KEY, token);
+    currentUser = data.user;
+    enterApp();
+  } catch (err) {
+    toast('❌ ' + err.message, 'err', 4000);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ============================================================
+   ENTER APP
+============================================================ */
+function enterApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  document.getElementById('bottomNav').style.display = 'flex';
+  applyUser();
+  loadMyVideos();
+}
+
+function applyUser() {
+  if (!currentUser) return;
+  const initial = (currentUser.name || 'U').charAt(0).toUpperCase();
+  document.getElementById('topAvatar').textContent = initial;
+  document.getElementById('bigAvatar').textContent = initial;
+  document.getElementById('pName').textContent = currentUser.name;
+  document.getElementById('pGmail').textContent = currentUser.gmail;
+  document.getElementById('pRegion').textContent = currentUser.region;
+  document.getElementById('iName').textContent = currentUser.name;
+  document.getElementById('iGmail').textContent = currentUser.gmail;
+  document.getElementById('iRegion').textContent = currentUser.region;
+}
+
+function logout() {
+  if (!confirm('အကောင့်မှ ထွက်မှာ သေချာလား?')) return;
+  localStorage.removeItem(TOKEN_KEY);
+  location.reload();
+}
+
+/* ============================================================
+   VIEW SWITCH
+============================================================ */
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === name);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  if (name === 'home') {
+    viewingOther = false;
+    loadMyVideos();
+  }
+}
+
+/* ============================================================
+   LOAD MY VIDEOS
+============================================================ */
+async function loadMyVideos() {
+  try {
+    myVideos = await api('/api/videos');
+    renderMyVideos();
+    updateStats();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderMyVideos() {
+  renderGrid('homeGrid', myVideos.slice(0, 4), true);
+  document.getElementById('homeEmpty').classList.toggle('show', myVideos.length === 0);
+}
+
+function updateStats() {
+  document.getElementById('s-videos').textContent = myVideos.length;
+  const size = myVideos.reduce((a, v) => a + v.size, 0);
+  document.getElementById('s-size').textContent = fmtSize(size);
+  const views = myVideos.reduce((a, v) => a + (v.views || 0), 0);
+  document.getElementById('s-views').textContent = views;
+  document.getElementById('iVideos').textContent = myVideos.length + ' videos';
+}
+
+/* ============================================================
+   RENDER GRID
+============================================================ */
+function renderGrid(containerId, list, canDelete) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  
+  list.forEach((v, i) => {
+    const card = document.createElement('div');
+    card.className = 'vcard';
+    card.style.animationDelay = (i * 0.05) + 's';
+    
+    const dur = v.duration ? fmtDur(v.duration) : '';
+    const url = API + '/uploads/' + v.filename;
+    
+    card.innerHTML = `
+      ${canDelete ? `<button class="vdel" data-id="${v.id}">🗑</button>` : ''}
+      <div class="vthumb">
+        <video src="${url}" muted preload="metadata"></video>
+        <div class="ov"></div>
+        <div class="play-ov"></div>
+        ${dur ? `<div class="dur">${dur}</div>` : ''}
+      </div>
+      <div class="vinfo">
+        <h4>${esc(v.title)}</h4>
+        <div class="meta">
+          <span>💾 ${fmtSize(v.size)}</span>
+          <span>👁 ${v.views || 0}</span>
+        </div>
+        <div class="meta" style="margin-top:3px">
+          <span>📅 ${fmtDate(v.date)}</span>
+        </div>
+      </div>
+    `;
+    
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('vdel')) return;
+      playVideo(v);
+    });
+    
+    if (canDelete) {
+      card.querySelector('.vdel').addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('ဒီ video ဖျက်မှာ သေချာလား?')) return;
+        try {
+          await api('/api/videos/' + v.id, { method: 'DELETE' });
+          toast('✅ ဖျက်ပြီးပါပြီ');
+          loadMyVideos();
+        } catch (err) {
+          toast('❌ ' + err.message, 'err');
+        }
+      });
+    }
+    
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================================
+   FIND OTHER USER
+============================================================ */
+async function findUser() {
+  const gmail = document.getElementById('findInput').value.trim();
+  const resultEl = document.getElementById('findResult');
+  
+  if (!gmail) {
+    toast('Gmail ထည့်ပါ', 'err');
+    return;
+  }
+  
+  resultEl.innerHTML = '<div style="text-align:center;color:var(--dim);padding:30px">⏳ ရှာနေသည်...</div>';
+  
+  try {
+    const data = await api('/api/user/' + encodeURIComponent(gmail));
+    
+    if (data.user.gmail.toLowerCase() === currentUser.gmail.toLowerCase()) {
+      resultEl.innerHTML = '<div style="text-align:center;color:var(--dim);padding:30px">👤 ဒါ သင်ကိုယ်တိုင်ပါ — Home မှာ ကြည့်ပါ</div>';
+      return;
+    }
+    
+    const initial = (data.user.name || 'U').charAt(0).toUpperCase();
+    resultEl.innerHTML = `
+      <div class="user-card">
+        <div class="av">${initial}</div>
+        <div class="info">
+          <h3>${esc(data.user.name)}</h3>
+          <p>📍 ${esc(data.user.region)} • 🎬 ${data.videos.length} videos</p>
+        </div>
+      </div>
+      <div class="grid" id="otherGrid"></div>
+      ${data.videos.length === 0 ? '<div style="text-align:center;color:var(--dim);padding:40px">📹 Video မတင်ထားသေးပါ</div>' : ''}
+    `;
+    
+    if (data.videos.length > 0) {
+      renderGrid('otherGrid', data.videos, false);
+    }
+  } catch (err) {
+    resultEl.innerHTML = `<div style="text-align:center;color:#ff5577;padding:30px">❌ ${esc(err.message)}</div>`;
+  }
+}
+
+/* ============================================================
+   UPLOAD
+============================================================ */
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const files = Array.from(e.target.files).filter(f => f.type.startsWith('video/'));
+  e.target.value = '';
+  
+  if (!files.length) { toast('Video file မဟုတ်ပါ', 'err'); return; }
+  
+  const prog = document.getElementById('progress');
+  const progText = document.getElementById('progText');
+  const progFile = document.getElementById('progFile');
+  prog.classList.add('show');
+  
+  let ok = 0;
+  const errors = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    progText.textContent = `တင်နေသည်... (${i + 1}/${files.length})`;
+    progFile.textContent = f.name;
+    
+    let duration = 0;
+    try { duration = await getDuration(f); } catch {}
+    
+    try {
+      const form = new FormData();
+      form.append('video', f);
+      form.append('title', f.name.replace(/\.[^.]+$/, ''));
+      form.append('duration', String(duration));
+      
+      await api('/api/videos', { method: 'POST', body: form });
+      ok++;
+    } catch (err) {
+      errors.push(f.name + ': ' + err.message);
+    }
+  }
+  
+  prog.classList.remove('show');
+  
+  if (errors.length) {
+    toast('❌ ' + errors[0], 'err', 5000);
+  } else if (ok > 0) {
+    toast(`✅ Video ${ok} ခု တင်ပြီးပါပြီ`);
+  }
+  
+  await loadMyVideos();
+  if (ok > 0) switchView('home');
+});
+
+function getDuration(file) {
+  return new Promise((res, rej) => {
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    const url = URL.createObjectURL(file);
+    v.onloadedmetadata = () => { URL.revokeObjectURL(url); res(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(url); rej(new Error('metadata error')); };
+    v.src = url;
+  });
+}
+
+/* ============================================================
+   PLAY
+============================================================ */
+async function playVideo(v) {
+  const modal = document.getElementById('playerModal');
+  const pv = document.getElementById('playerVideo');
+  
+  pv.src = API + '/uploads/' + v.filename;
+  document.getElementById('playerTitle').textContent = v.title;
+  document.getElementById('playerUser').textContent = v.userName || currentUser.name;
+  document.getElementById('playerDate').textContent = new Date(v.date).toLocaleString();
+  document.getElementById('playerSize').textContent = fmtSize(v.size);
+  document.getElementById('playerViews').textContent = (v.views || 0) + 1;
+  
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  pv.play().catch(() => {});
+  
+  try { await api('/api/videos/' + v.id + '/view', { method: 'POST' }); } catch {}
+}
+
+function closePlayer() {
+  const modal = document.getElementById('playerModal');
+  const pv = document.getElementById('playerVideo');
+  pv.pause();
+  pv.src = '';
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+  if (!viewingOther) loadMyVideos();
+}
+
+document.getElementById('playerModal').addEventListener('click', e => {
+  if (e.target.id === 'playerModal') closePlayer();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePlayer();
+});
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1024*1024*1024) return (b/1024/1024).toFixed(1) + ' MB';
+  return (b/1024/1024/1024).toFixed(2) + ' GB';
+}
+
+function fmtDate(d) {
+  const diff = Date.now() - d;
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const dy = Math.floor(diff / 86400000);
+  if (m < 1) return 'ယခုလေးတင်';
+  if (m < 60) return m + ' မိနစ်က';
+  if (h < 24) return h + ' နာရီက';
+  if (dy < 7) return dy + ' ရက်က';
+  return new Date(d).toLocaleDateString();
+}
+
+function fmtDur(s) {
+  if (!s || !isFinite(s)) return '';
+  s = Math.floor(s);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+(async () => {
+  if (token) {
+    try {
+      currentUser = await api('/api/me');
+      enterApp();
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      token = null;
+    }
+  }
+})();
+</script>
+</body>
+        </html>
